@@ -1,0 +1,27 @@
+[template]
+ignore = ["README.md"]
+
+[hooks]
+pre = ["pre.rhai"]
+post = ["post.rhai"]
+
+[placeholders.license]
+type = "string"
+prompt = "License?"
+default = "MIT"
+choices = ["MIT", "GPL3", "GLWTPL"]
+
+[conditional.'license == "MIT"']
+ignore = ["LICENSE-GLWTPL", "LICENSE-GPL3"]
+
+[conditional.'license == "GPL3"']
+ignore = ["LICENSE-GLWTPL", "LICENSE-MIT"]
+
+[conditional.'license == "GLWTPL"']
+ignore = ["LICENSE-MIT", "LICENSE-GPL3"]
+
+[conditional.'crate_type == "lib"']
+ignore = ["src/main.cpp"]
+
+[conditional.'crate_type == "bin"']
+ignore = ["src/lib.cpp", "src/lib.hpp"]
