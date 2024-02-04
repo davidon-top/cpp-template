@@ -71,12 +71,9 @@ for TARGET in $TARGETS; do
 				echo "cleaning project"
 				rm -rf $BUILD_FOLDER
 				;;
-			"g" | "b")
-				mkdir -p $BF
-				;;
 			"g")
 				echo "generating cmake files"
-				CMAKE_BUILD_TYPE=${BUILD_TYPE^}
+				CMAKE_BUILD_TYPE="$(tr '[:lower:]' '[:upper:]' <<< ${BUILD_TYPE:0:1})${BUILD_TYPE:1}"
 				cmake -S . -B $BF -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE
 				;;
 			"b")
