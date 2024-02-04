@@ -6,15 +6,18 @@
 BUILD_DEBUG_FOLDER="build/debug"
 BUILD_RELEASE_FOLDER="build/release"
 DEFAULT_BUILD_TYPE="d" # "d" for debug and "r" for release
-EXECUTABLE_NAME="{{project-name}}" # should be the name of the executable beeing built, this is used for the run action
-
-COLOR="\033[1;33m" # https://stackoverflow.com/a/5947802
+DEFAULT_TARGET="{{project-name}}" # should be the name of the executable beeing built, this is used for the run action
 
 #######################################################################################
 ## this is where the script starts you should not need to edit anything below this line
 #######################################################################################
 
+if [ -n "$TARGET" ]; then
+	DEFAULT_TARGET=$TARGET
+fi
+
 NC="\033[0m" # No Color
+COLOR="\033[1;33m"
 
 if [ -z "$1" ]
 then
@@ -37,6 +40,7 @@ case $1 in
         echo "b - build project"
         echo "r - run project"
         echo "s - strip executable"
+		echo "d - debug with gdb"
         echo ""
         echo "actions can be chained so gbr will first run generate then build and then run"
         echo ""
@@ -67,50 +71,44 @@ echo() {
 }
 
 ARG=$1
+if [[ $BUILD_TYPE == "d" ]]; then
+	BUILD_FOLDER=$BUILD_DEBUG_FOLDER
+else
+	BUILD_FOLDER=$BUILD_RELEASE_FOLDER
+fi
 for (( i=0; i<${#ARG}; i++ )); do
     case ${ARG:$i:1} in
         "c")
             echo "cleaning project"
-            if [[ $BUILD_TYPE == "d" ]]; then
-                rm -rf $BUILD_DEBUG_FOLDER
-            else
-                rm -rf $BUILD_RELEASE_FOLDER
-            fi
+			rm -rf $BUILD_FOLDER
             ;;
         "g")
             echo "generating cmake files"
+			mkdir -p $BUILD_FOLDER
             if [[ $BUILD_TYPE == "d" ]]; then
-                mkdir -p $BUILD_DEBUG_FOLDER
                 cmake -S . -B $BUILD_DEBUG_FOLDER -DCMAKE_BUILD_TYPE=Debug
             else
-                mkdir -p $BUILD_RELEASE_FOLDER
                 cmake -S . -B $BUILD_RELEASE_FOLDER -DCMAKE_BUILD_TYPE=Release
             fi
             ;;
         "b")
             echo "building project"
-            if [[ $BUILD_TYPE == "d" ]]; then
-                cmake --build $BUILD_DEBUG_FOLDER
-            else
-                cmake --build $BUILD_RELEASE_FOLDER
-            fi
+			cmake --build $BUILD_FOLDER
             ;;
         "r")
             echo "running project"
-            if [[ $BUILD_TYPE == "d" ]]; then
-                ./$BUILD_DEBUG_FOLDER/$EXECUTABLE_NAME
-            else
-                ./$BUILD_RELEASE_FOLDER/$EXECUTABLE_NAME
-            fi
+			./$BUILD_FOLDER/$DEFAULT_TARGET
             ;;
         "s")
             echo "stripping executable"
-            if [[ $BUILD_TYPE == "d" ]]; then
-                strip -s $BUILD_DEBUG_FOLDER/$EXECUTABLE_NAME -o "$BUILD_DEBUG_FOLDER/$EXECUTABLE_NAME-stripped"
-            else
-                strip -s $BUILD_RELEASE_FOLDER/$EXECUTABLE_NAME -o "$BUILD_RELEASE_FOLDER/$EXECUTABLE_NAME-stripped"
-            fi
+			strip -s $BUILD_FOLDER/$DEFAULT_TARGET -o "$BUILD_FOLDER/$DEFAULT_TARGET-stripped"
             ;;
+		"d")
+			echo "debug project"
+			if [[ $BUILD_TYPE == "r" ]]; then
+				echo "WARNING: debugging release build"
+			fi
+			gdb ./$BUILD_FOLDER/$DEFAULT_TARGET
         *)
             echo "unknown action ${1:$i:1}"
             exit 1
